@@ -1,6 +1,6 @@
 "use client";
 
-import TextInputWorkspace from '@/app/ui/text-input-workspace';
+import TextWorkspace from '@/app/ui/text-workspace';
 import CipherControlPanel from '../ui/cipher-control-panel';
 import { useState } from 'react';
 
@@ -15,6 +15,7 @@ export default function Page() {
   }
 
   function handleUpdateText(text: string) {
+    console.log(`called handleUpdateText(${text})`)
     setCurrentText(text);
   }
 
@@ -23,19 +24,20 @@ export default function Page() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col p-6">
+    <div className="flex h-screen flex-col p-6">
       <header className="text-center">Cipher Tool</header>
       <main className="flex grow flex-row gap-4">
-        <TextInputWorkspace 
-          text={currentText} 
-          onTextChange={handleInputText} 
+        <TextWorkspace 
+          originalText={originalText}
+          currentText={currentText} 
+          onTextInput={handleInputText} 
           mode={mode}
           onModeChange={handleChangeMode}
         />
         <CipherControlPanel 
-          currentText={currentText}
           originalText={originalText}
-          updateText={handleUpdateText}
+          currentText={currentText}
+          onUpdateText={handleUpdateText}
           mode={mode}
         />
       </main>

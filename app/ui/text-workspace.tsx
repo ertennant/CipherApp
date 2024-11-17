@@ -1,8 +1,21 @@
 import Image from "next/image";
 import copyIcon from '../../public/copy-icon.svg';
 import revertIcon from '../../public/revert-icon.svg';
+import { FormEvent, SetStateAction, useState } from "react";
 
-export default function TextInputWorkspace({text, onTextChange, mode, onModeChange}: any) {
+export default function TextWorkspace({originalText, currentText, onTextInput, mode, onModeChange}: any) {
+  const [text, setText] : [string, React.Dispatch<SetStateAction<string>>] = useState(currentText);
+  function copyText() {
+    console.log(`called copyText()`);
+    navigator.clipboard.writeText(currentText);
+  }
+
+  function handleSubmit(event: FormEvent<any>) {
+    event.preventDefault();
+    console.log(event.currentTarget.elements.textinput.value);
+    onTextInput(event.currentTarget.elements.textinput.value);
+  }
+
   return (
     <div className="flex grow flex-col">
       <div className="flex flex-row justify-between">
@@ -17,7 +30,7 @@ export default function TextInputWorkspace({text, onTextChange, mode, onModeChan
           </div>
         </div>
         <div className="flex flex-row justify-end">
-          <button className="rounded-full hover:bg-blue-900 p-2">
+          <button className="rounded-full hover:bg-blue-900 p-2" onClick={copyText}>
             <Image
               src={copyIcon}
               alt="Copy Text"
@@ -32,13 +45,17 @@ export default function TextInputWorkspace({text, onTextChange, mode, onModeChan
           </button>
         </div>
       </div>
-      <textarea 
-        value={text} 
-        onChange={e => onTextChange(e.currentTarget.value)} 
-        className="rounded-lg p-1 text-black text-lg resize-none font-mono" 
-        rows={12} 
-        placeholder="Enter your message here!"
-      ></textarea>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <textarea 
+          name="textinput"
+          className="rounded-lg p-1 text-black text-lg resize-none font-mono" 
+          rows={12} 
+          placeholder="Enter your message here!"
+          disabled={originalText != ""}
+        ></textarea>
+        <input type="submit"></input>
+      </form>
+      <p className={!currentText ? "bg-white text-slate-400 font-mono text-lg p-1 rounded-lg" : "bg-white text-black font-mono text-lg p-1 rounded-lg"}>{!currentText ? "Result will be displayed here." : currentText}</p>
     </div>
   )
 }
