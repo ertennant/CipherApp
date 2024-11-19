@@ -1,15 +1,13 @@
 "use client";
-
-import { useState, SetStateAction, ChangeEvent } from "react";
-// import ShiftCipherOptions from "./shift-cipher-options";
-// import MonoCipherOptions from "./mono-cipher-options";
-// import PolyCipherOptions from "./poly-cipher-options";
-import CharMapping from "./char-mapping";
+import { useState, SetStateAction, ChangeEvent, useEffect } from "react";
 import CharMappings from "./char-mappings";
 
+const LATIN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const CYRILLIC = ""; // to do: other major alphabets 
+
 export default function CipherControlPanel({originalText, currentText, onUpdateText, mode}: any) {
-  const [cipher, setCipher] = useState("");
-  const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(new Map());
+  const [cipher, setCipher] = useState("shift");
+  const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(initCharMapping());
 
   function initCharMapping() {
     let m : Map<string, string> = new Map(); 
@@ -30,11 +28,11 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
     event.preventDefault(); 
     let tempMap = new Map(); 
     let tempText = "";
+    let ignoreWhitespace = event.currentTarget.elements.whitespace.checked; 
+    let ignorePunctuation = event.currentTarget.elements.punctuation.checked; 
 
     if (cipher === "shift") {
       let shiftVal = parseInt(event.currentTarget.elements.shift.value); 
-      let ignoreWhitespace = event.currentTarget.elements.whitespace.checked; 
-      let ignorePunctuation = event.currentTarget.elements.punctuation.checked; 
 
       if (mode == "decrypt") {
         shiftVal *= -1; 
@@ -73,6 +71,31 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
           tempMap.set(c, p);
         }
       }
+    } else if (cipher === "mono") {
+      let keyword = event.currentTarget.elements.keyword.value; 
+      for (let i = 0; i < keyword.length; i++) {
+        let a = "";
+        let b = keyword.charAt(i);
+
+        if (keyword.charAt(i) === keyword.charAt(i).toUpperCase()) {
+          a = LATIN.charAt(i);
+        } else {
+          a = LATIN.charAt(i).toLowerCase(); 
+        }
+
+        if (mode === "encrypt") {
+          tempMap.set(a, b);
+        } else if (mode === "decrypt") {
+          tempMap.set(b, a);
+        }
+
+      }
+      
+      for (let i = 0; i < originalText.length; i++) {
+        console.log(`tempMap.get(${originalText.charAt(i)}) = ${tempMap.get(originalText.charAt(i))}`)
+        tempText += tempMap.get(originalText.charAt(i));
+      }
+      // To Do Later: add code for user to set chars manually (i.e., including spaces and punctuation)
     }
     console.log(tempText);
     setMappings(tempMap);
@@ -80,33 +103,36 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   return (
-    <div className="flex grow flex-col">
-      <CharMappings mappings={mappings} mode={mode}></CharMappings>
-      <div className="flex flex-col">
-        <label htmlFor="mode-select">Select a cipher type:</label>
-        <select className={!originalText ? "text-slate-400" : "text-black"} name="ciphers" id="cipher-select" defaultValue={"select"} onChange={handleCipherChange} disabled={!originalText}>
+    <div className={"flex grow flex-col h-fit rounded-lg p-2 border bg-white/55 backdrop-blur-md" + (!originalText ? " text-slate-500" : " text-black")}>
+      <h2 className="m-1 text-lg font-bold">Cipher Settings</h2>
+      <div className="m-1">
+        <label htmlFor="mode-select">Select a cipher type: </label>
+        <select name="ciphers" className="rounded-md p-1" defaultValue={"select"} onChange={handleCipherChange} disabled={!originalText}>
           <option value="shift">Shift</option>
           <option value="mono">Monoalphabetic Substitution</option>
           <option value="poly">Polyalphabetic Substitution</option>
         </select>
       </div>
       <form onSubmit={applyCipher}>
-        {cipher === "shift" ? 
-          <input type="number" name="shift" className="text-black" min={0} max={26} defaultValue={0} disabled={!originalText}></input> 
-          : cipher === "mono" ?
-          <input className="rounded-md p-1 m-1" type="text" name="keyword" placeholder="keyword" disabled={!originalText}></input>
-          : ""
-        }
-        <div>
-          <input type="checkbox" name="whitespace" defaultChecked disabled={!originalText}></input>
+        <div className="m-1">
+          <label htmlFor="shift" className={cipher !== "shift" ? "hidden" : ""}>Shift Value: </label>
+          <input type="number" name="shift" className={"rounded-md p-1 bg-white/60 hover:bg-white/80" + (cipher !== "shift" ? " hidden" : "")} min={0} max={26} defaultValue={0} disabled={!originalText}></input> 
+        </div>
+        <div className="m-1">
+          <label htmlFor="keyword" className={cipher !== "mono" ? "hidden" : ""}>Keyword: </label>
+          <input type="text" name="keyword" className={"rounded-md p-1 bg-white/60 hover:bg-white/80" + (cipher !== "mono" ? " hidden" : "")} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
+        </div>
+        <div className="m-1">
+          <input type="checkbox" className="" name="whitespace" defaultChecked disabled={!originalText}></input>
           <label htmlFor="whitespace">Ignore Whitespace</label>
         </div>
-        <div>
+        <div className="m-1">
           <input type="checkbox" name="punctuation" defaultChecked disabled={!originalText}></input>
           <label htmlFor="punctuation">Ignore Punctuation</label>
         </div>
-        <input type="submit" id="submit" disabled={!originalText}></input>
+        <input type="submit" value="Apply Changes" className={"bg-white/80 border rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-white hover:cursor-pointer")} disabled={!originalText}></input>
       </form>  
+      <CharMappings mappings={mappings} mode={mode} key={currentText}></CharMappings>
     </div>
   )
 }

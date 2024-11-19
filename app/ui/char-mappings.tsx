@@ -21,8 +21,11 @@ export default function CharMappings({mappings, mode}: any) {
   ) 
 
   return (
-    <div className="flex flex-row">
-      {charMapElements}
+    <div className="">
+      <h2 className={"m-1 text-lg font-bold" + (mappings.size < 1 ? " hidden" : "")}>Letter Mappings</h2>
+      <div className="flex flex-row">
+        {charMapElements}
+      </div>
     </div>
   )
 }

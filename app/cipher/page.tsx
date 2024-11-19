@@ -24,9 +24,9 @@ export default function Page() {
   }
 
   return (
-    <div className="flex h-screen flex-col p-6">
-      <header className="text-center">Cipher Tool</header>
-      <main className="flex grow flex-row gap-4">
+    <div className="flex h-screen flex-col p-6 bg-gradient-to-br from-cyan-500 to-violet-500 text-black">
+      {/* <header className="text-center">Cipher Tool</header> */}
+      <main className="flex flex-row grow gap-4">
         <TextWorkspace 
           originalText={originalText}
           currentText={currentText} 
@@ -36,6 +36,7 @@ export default function Page() {
         />
         <CipherControlPanel 
           originalText={originalText}
+          key={originalText}
           currentText={currentText}
           onUpdateText={handleUpdateText}
           mode={mode}
