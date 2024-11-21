@@ -6,15 +6,15 @@ export default function CharMappings({mappings, mode}: any) {
   // For displaying how each item in the set of chars in originalText is mapped to a target char. 
   let charMapElements = (!mappings || mappings.keys().size === 0) ? "" : 
   Array.from(mappings.keys()).sort().map(c => 
-    <div key={c}>
-      <p className="text-center text-black bg-white border-solid border-2 border-black w-8 h-8">{c}</p>
+    <div key={c} className="my-2">
+      <p className="text-center text-black bg-white border-solid border-y-2 border-x border-black w-8 h-8">{c}</p>
       <Image
         src={mode === "encrypt" ? arrowDown : arrowUp}
         alt={mode === "encrypt" ? "down arrow" : "up arrow"}
         className="w-8 h-8 p-1"
       >
       </Image>
-      <p className="text-center text-black bg-white border-solid border-2 border-black w-8 h-8">
+      <p className="text-center text-black bg-white border-solid border-y-2 border-x border-black w-8 h-8">
         {mappings.get(c)}
       </p>
     </div>
@@ -23,7 +23,7 @@ export default function CharMappings({mappings, mode}: any) {
   return (
     <div className="">
       <h2 className={"m-1 text-lg font-bold" + (mappings.size < 1 ? " hidden" : "")}>Letter Mappings</h2>
-      <div className="flex flex-row">
+      <div className="flex flex-row flex-wrap">
         {charMapElements}
       </div>
     </div>
