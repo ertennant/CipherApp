@@ -85,6 +85,7 @@ export default function TextWorkspace({originalText, currentText, onTextInput, m
         </div>
         <textarea 
           disabled 
+          name="outputTextArea"
           className={"bg-white font-mono text-lg resize-none w-full p-1 rounded-lg grow bg-white/60 hover:bg-white/80 hover:cursor-text" + (!currentText ? " text-slate-400" : "")}
           value={!currentText ? "Result will be displayed here." : currentText}
         ></textarea>
