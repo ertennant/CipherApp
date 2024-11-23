@@ -24,7 +24,7 @@ export default function Page() {
   }
 
   return (
-    <div className="flex min-h-screen h-full flex-col p-6 bg-gradient-to-br from-cyan-500 to-violet-500 text-black">
+    <div className="flex min-h-screen h-full flex-col p-6 text-black">
       {/* <header className="text-center">Cipher Tool</header> */}
       <main className="flex flex-row grow gap-4">
         <TextWorkspace 

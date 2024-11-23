@@ -24,6 +24,15 @@ const ALPHABETS : Record<string, string[]> = {
     'Λ', 'Μ', 'Ν', 'Ξ', 'Ο',
     'Π', 'Ρ', 'Σ', 'Τ', 'Υ',
     'Φ', 'Χ', 'Ψ', 'Ω'
+  ], 
+  "ukrainian": [
+    'А', 'Б', 'В', 'Г', 'Ґ',
+    'Д', 'Е', 'Є', 'Ж', 'З',
+    'И', 'І', 'Ї', 'Й', 'К', 
+    'Л', 'М', 'Н', 'О', 'П',
+    'Р', 'С', 'Т', 'У', 'Ф', 
+    'Х', 'Ц', 'Ч', 'Ш', 'Щ', 
+    'Ь', 'Ю', 'Я'
   ]
 }
 
@@ -73,9 +82,8 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
     setMappings(initCharMapping());
   }
 
-  function applyCipher(event: any) {
-    console.log(`called applyCipher(${event})`);
-    event.preventDefault(); 
+  function applyMonoCipher(event: any) {
+    console.log(`called applyMonoCipher(${event})`);
     let tempMap = mappings; 
     let tempText = "";
     let groupSize = 0; 
@@ -139,17 +147,15 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
           tempMap.set(a.toLowerCase(), a.toLowerCase());
         }
       }
-    } else if (cipher === "vigenere") {
-      console.log(`Vigenere Cipher not yet implemented`);
-    }
+    } 
     setMappings(tempMap);
 
-    let counter = 0; 
+    let g = 0; // group index counter
     for (let i = 0; i < originalText.length; i++) {
       // if useGroups is on, insert a space if one is needed 
-      if (options.useGroups === true && counter === groupSize) {
+      if (options.useGroups === true && g === groupSize) {
         tempText += ' ';
-        counter = 0; 
+        g = 0; 
       } 
 
       let inChar = originalText.charAt(i);
@@ -159,89 +165,188 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
         } else {
           tempText += tempMap.get(inChar);
         }
-        counter++; 
+        g++; 
       } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
         tempText += inChar;
-        counter++; 
+        g++; 
       } else if (inChar !== ' ' && !alphabet.includes(inChar) && options.removeNonAlpha === false) {
         tempText += inChar; 
-        counter++; 
+        g++; 
       }
     }
     // pad the final block if needed 
-    if (options.useGroups === true && counter > 0) {
-      while (counter < groupSize) {
+    if (options.useGroups === true && g > 0) {
+      while (g < groupSize) {
         tempText += tempMap.get(alphabet[alphabet.length - 1]);
-        counter++; 
+        g++; 
       }
     }
     console.log(tempText);
     onUpdateText(tempText);
   }
 
+  function applyPolyCipher(event: any) {
+    console.log(`called applyPolyCipher(${event})`);
+    let tempText = "";
+    let groupSize = 0; 
+    if (options.useGroups) {
+      groupSize = parseInt(event.currentTarget.elements.groupSize.value); 
+    }
+
+    if (cipher === "vigenere") {
+      let keyword = event.currentTarget.elements.keyword.value; 
+      keyword = keyword.toUpperCase(); 
+
+      let g = 0; // group index counter 
+      let k = 0; // keyword index 
+      for (let i = 0; i < originalText.length; i++) {
+        if (options.useGroups === true && g === groupSize) {
+          tempText += ' ';
+          g = 0; 
+        } 
+
+        let inChar = originalText.charAt(i);
+        let charIdx = alphabet.indexOf(inChar.toUpperCase());
+
+        if (alphabet.includes(inChar.toUpperCase())) {
+          if (mode === "encrypt") {
+            charIdx += alphabet.indexOf(keyword.charAt(k));
+            if (charIdx >= alphabet.length) {
+              charIdx -= alphabet.length;
+            }
+          } else if (mode === "decrypt") {
+            charIdx -= alphabet.indexOf(keyword.charAt(i));
+            if (charIdx < 0) {
+              charIdx += alphabet.length; 
+            }
+          }
+
+          if (inChar === inChar.toUpperCase() || options.preserveCase === false) {
+            tempText += alphabet[charIdx];
+          } else {
+            tempText += alphabet[charIdx].toLowerCase();
+          }
+          g++; // increment current group size 
+
+        } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
+          tempText += inChar;
+          g++; 
+        } else if (inChar !== ' ' && !alphabet.includes(inChar) && options.removeNonAlpha === false) {
+          tempText += inChar; 
+          g++; 
+        }
+  
+        k++; // move to next keyword letter; go back to keyword[0] if you're at the end 
+        if (k == keyword.length) {
+          k = 0; 
+        }
+      }
+      // pad the final block if needed 
+      if (options.useGroups === true && g > 0) {
+        while (g < groupSize) {
+          let charIdx = alphabet.length - 1; 
+          if (mode === "encrypt") {
+            charIdx += alphabet.indexOf(keyword.charAt(k));
+            if (charIdx > alphabet.length) {
+              charIdx -= alphabet.length;
+            }
+          } else if (mode === "decrypt") {
+            charIdx -= alphabet.indexOf(keyword.charAt(k));
+            if (charIdx < 0) {
+              charIdx += alphabet.length; 
+            }
+          }
+          tempText += alphabet[charIdx];
+          k++; 
+          if (k === keyword.length) {
+            k = 0; 
+          }
+          g++; 
+        }
+      }
+    }    
+    console.log(tempText);
+    onUpdateText(tempText);
+  }
+
+  function applyCipher(event: any) {
+    console.log(`called applyCipher(${event})`);
+    event.preventDefault(); 
+
+    if (["shift", "atbash", "mono"].includes(cipher)) {
+      applyMonoCipher(event);
+    } else if (["vigenere"].includes(cipher)) {
+      applyPolyCipher(event);
+    }
+  }
+
   return (
-    <div className={"flex grow flex-col h-fit w-1/2 rounded-lg p-2 border bg-white/55 backdrop-blur-md" + (!originalText ? " text-slate-500" : " text-black")}>
+    <div className={"flex grow flex-col h-fit w-1/2 rounded-lg p-2 border border-primary bg-primary/55 backdrop-blur-md" + (!originalText ? " text-text-disabled" : " text-text-normal")}>
       <h2 className="m-1 text-lg font-bold">Cipher Settings</h2>
       <div className="m-1">
         <label htmlFor="ciphers">Select a cipher type: </label>
-        <select id="ciphers" name="ciphers" className="rounded-md p-1" defaultValue={"select"} onChange={handleCipherChange} disabled={!originalText}>
+        <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" defaultValue={"select"} onChange={handleCipherChange} disabled={!originalText}>
           <option value="shift">Caesar (Shift)</option>
           <option value="atbash">Atbash (Reverse Alphabet)</option>
           <option value="mono">Monoalphabetic Substitution</option>
-          <option value="vigenere" disabled>Vigenère (Coming Soon)</option>
+          <option value="vigenere">Vigenère</option>
         </select>
       </div>
       <form onSubmit={applyCipher}>
         <div className="m-1">
           <label htmlFor="alphabet">Select an alphabet: </label>
-          <select id="alphabet" name="alphabet" className="rounded-md p-1" defaultValue={"latin"} disabled={!originalText} onChange={e => setAlphabet(ALPHABETS[e.currentTarget.value])}>
+          <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" defaultValue={"latin"} disabled={!originalText} onChange={e => setAlphabet(ALPHABETS[e.currentTarget.value])}>
             <option value="latin">Latin</option>
-            <option value="russian">Russian</option>
             <option value="greek">Greek</option>
+            <option value="russian">Russian</option>
+            <option value="ukrainian">Ukrainian</option>
             <option value="auto" disabled>Auto-Detect (Coming Soon)</option>
             <option value="custom" disabled>Define Custom Alphabet (Coming Soon)</option>
           </select>
         </div>
         <div className="m-1">
           <label htmlFor="alphabetDisplay">Current Alphabet: </label>
-          <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-white/60 w-full"} disabled value={alphabet.join("")}></input>
+          <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-primary/60 w-full"} disabled value={alphabet.join("")}></input>
         </div>
         <div className={"m-1" + (cipher !== "shift" ? " hidden" : "")}>
           <label htmlFor="shift" >Shift Value: </label>
-          <input type="number" id="shift" name="shift" className={"rounded-md p-1 bg-white/60 hover:bg-white/80"} min={0} max={alphabet.length} defaultValue={0} disabled={!originalText}></input> 
+          <input type="number" id="shift" name="shift" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={alphabet.length} defaultValue={0} disabled={!originalText}></input> 
         </div>
         <div className={"m-1" + (!["mono", "vigenere"].includes(cipher) ? " hidden" : "")}>
           <label htmlFor="keyword">Keyword: </label>
-          <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-white/60 hover:bg-white/80"} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
+          <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
         </div>
         <div className="m-1">
           <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={!originalText} defaultChecked onChange={handleOptionsChange}></input>
-          <label htmlFor="rmWhitespace" title="Remove all spaces, tabs, and other whitespace characters before processing.">Remove Whitespace</label>
+          <label htmlFor="rmWhitespace" title="Remove all spaces, tabs, and other whitespace characters before processing."> Remove Whitespace</label>
         </div>
         <div className="m-1">
           <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" disabled={!originalText} defaultChecked onChange={handleOptionsChange}></input>
-          <label htmlFor="rmNonAlpha" title="Remove numbers, punctuation, and special characters before processing.">Remove Non-Letter Characters</label>
+          <label htmlFor="rmNonAlpha" title="Remove numbers, punctuation, and special characters before processing."> Remove Non-Letter Characters</label>
         </div>
         <div className="m-1">
           <input type="checkbox" id="preserveCase" name="preserveCase" disabled={!originalText} onChange={handleOptionsChange}></input>
-          <label htmlFor="preserveCase" title="Map uppercase letters to uppercase letters, and lowercase letters to lowercase letters.">Preserve Case</label>
+          <label htmlFor="preserveCase" title="Map uppercase letters to uppercase letters, and lowercase letters to lowercase letters."> Preserve Case</label>
         </div>        
         <div className="m-1">
           <input type="checkbox" id="useGroups" name="useGroups" disabled={!originalText} defaultChecked onChange={handleOptionsChange}></input>
-          <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks.">Use Groups</label>
+          <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks."> Use Groups</label>
         </div>
         <div className={"m-1" + (!options.useGroups ? " hidden" : "")}>
           <label htmlFor="groupSize">Group Size: </label>
-          <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-white/60 hover:bg-white/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText}></input> 
+          <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText}></input> 
         </div>
-        <input type="submit" value="Apply Changes" className={"bg-white/80 border rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-white hover:cursor-pointer")} disabled={!originalText}></input>
-      </form>  
-      <CharMappings 
-        mappings={mappings} 
-        mode={mode} 
-        alphabet={alphabet}
-        key={currentText}>
-      </CharMappings>
+        <input type="submit" value="Apply Changes" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")} disabled={!originalText}></input>
+      </form> 
+      {["shift", "atbash", "mono"].includes(cipher) ? 
+        <CharMappings 
+          mappings={mappings} 
+          mode={mode} 
+          alphabet={alphabet}
+          key={currentText}>
+        </CharMappings>
+        : ""
+      }
     </div>
   )
 }
