@@ -2,10 +2,16 @@ import Image from "next/image";
 import arrowDown from '../../public/arrow-down.svg';
 import arrowUp from '../../public/arrow-up.svg';
 
-export default function CharMappings({mappings, alphabet, mode}: any) {
+type AppProps = {
+  mappings: Map<string, string>, 
+  alphabet: string[], 
+  mode: string
+}
+
+export default function CharMappings({mappings, alphabet, mode}: AppProps) {
   // For displaying how each item in the set of chars in originalText is mapped to a target char. 
-  let charMapElements = (!mappings || mappings.keys().size === 0) ? "" : 
-  Array.from(mappings.keys()).sort().map(c => 
+  let charMapElements = (!mappings || mappings.size === 0) ? "" : 
+  Array.from(mappings.keys()).map(c => 
     alphabet.includes(c) ? 
       <div key={c} className="my-2">
         <p className="text-center text-black bg-white border-solid border-y-2 border-x border-black w-8 h-8">{c}</p>

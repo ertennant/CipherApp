@@ -3,26 +3,34 @@ import copyIcon from '../../public/copy-icon.svg';
 import editIcon from '../../public/edit-icon.svg';
 import { FormEvent, SetStateAction, useState } from "react";
 
-export default function TextWorkspace({originalText, currentText, onTextInput, mode, onModeChange}: any) {
+type AppProps = {
+  originalText: string, 
+  currentText: string, 
+  onTextInput: any, 
+  mode: string, 
+  onModeChange: any
+}
+
+export default function TextWorkspace({originalText, currentText, onTextInput, mode, onModeChange}: AppProps) {
   const [text, setText] : [string, React.Dispatch<SetStateAction<string>>] = useState(currentText);
   function copyInputText() {
-    console.log(`called copyInputText()`);
+    // console.log(`called copyInputText()`);
     navigator.clipboard.writeText(originalText);
   }
 
   function copyOutputText() {
-    console.log(`called copyOutputText()`);
+    // console.log(`called copyOutputText()`);
     navigator.clipboard.writeText(currentText);
   }
 
   function editInputText() {
-    console.log(`called editInputText()`);
+    // console.log(`called editInputText()`);
     onTextInput("");
   }
 
   function handleSubmit(event: FormEvent<any>) {
     event.preventDefault();
-    console.log(event.currentTarget.elements.textinput.value);
+    // console.log(event.currentTarget.elements.textinput.value);
     onTextInput(event.currentTarget.elements.textinput.value);
   }
 

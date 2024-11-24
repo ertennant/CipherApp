@@ -2,30 +2,30 @@
 import { useState, SetStateAction, ChangeEvent, MouseEvent, KeyboardEvent } from "react";
 import CharMappings from "./char-mappings";
 
-const ALPHABETS : Record<string, string[]> = {
-  "latin": [
+const ALPHABETS : Map<string, string[]> = new Map([
+  ["latin", [
     'A', 'B', 'C', 'D', 'E', 'F',
     'G', 'H', 'I', 'J', 'K', 'L',
     'M', 'N', 'O', 'P', 'Q', 'R',
     'S', 'T', 'U', 'V', 'W', 'X',
     'Y', 'Z'
-  ], 
-  "russian": [
+  ]], 
+  ["russian", [
     'А', 'Б', 'В', 'Г', 'Д', 'Е',
     'Ё', 'Ж', 'З', 'И', 'Й', 'К',
     'Л', 'М', 'Н', 'О', 'П', 'Р',
     'С', 'Т', 'У', 'Ф', 'Х', 'Ц',
     'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь',
     'Э', 'Ю', 'Я'
-  ], 
-  "greek": [
+  ]], 
+  ["greek", [
     'Α', 'Β', 'Γ', 'Δ', 'Ε',
     'Ζ', 'Η', 'Θ', 'Ι', 'Κ',
     'Λ', 'Μ', 'Ν', 'Ξ', 'Ο',
     'Π', 'Ρ', 'Σ', 'Τ', 'Υ',
     'Φ', 'Χ', 'Ψ', 'Ω'
-  ], 
-  "ukrainian": [
+  ]], 
+  ["ukrainian", [
     'А', 'Б', 'В', 'Г', 'Ґ',
     'Д', 'Е', 'Є', 'Ж', 'З',
     'И', 'І', 'Ї', 'Й', 'К', 
@@ -33,15 +33,21 @@ const ALPHABETS : Record<string, string[]> = {
     'Р', 'С', 'Т', 'У', 'Ф', 
     'Х', 'Ц', 'Ч', 'Ш', 'Щ', 
     'Ь', 'Ю', 'Я'
-  ]
+  ]]
+])
+
+type AppProps = {
+  originalText: string, 
+  currentText: string, 
+  onUpdateText: any, 
+  mode: string
 }
 
-
-export default function CipherControlPanel({originalText, currentText, onUpdateText, mode}: any) {
+export default function CipherControlPanel({originalText, currentText, onUpdateText, mode}: AppProps) {
   const [cipher, setCipher] = useState("shift");
-  const [alphabet, setAlphabet] = useState(ALPHABETS.latin);
-  const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(initCharMapping());
-  const [options, setOptions] = useState({removeWhitespace: true, removeNonAlpha: true, preserveCase: false, useGroups: true});
+  const [alphabet, setAlphabet] = useState("latin");
+  const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(new Map());
+  const [options, setOptions] = useState({removeWhitespace: true, removeNonAlpha: true, preserveCase: false, useGroups: true, usePadding: true});
 
   function initCharMapping() {
     let m : Map<string, string> = new Map(); 
@@ -54,8 +60,29 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
     return m; 
   }
 
+  function defineCustomAlphabet(event: any): void {
+    event.preventDefault();
+    // validate, then set
+    let userInput = (event.currentTarget.elements.namedItem('alphabetInput') as HTMLInputElement).value; 
+    if (userInput == "") {
+      alert("Error: custom alphabet cannot be empty.");
+      return; 
+    } 
+    let userAlpha = [];
+    for (let i = 0; i < userInput.length; i++) {
+      if (userAlpha.indexOf(userInput.charAt(i)) === -1) {
+        userAlpha.push(userInput.charAt(i));
+      } else {
+        alert("Error: custom alphabets cannot have duplicate letters.");
+        return; 
+      }
+    }
+    ALPHABETS.set("user1", userAlpha);
+    setAlphabet("user1");
+  }
+
   function handleOptionsChange(event: ChangeEvent<HTMLInputElement>): void {
-    let tempOpts = options; 
+    let tempOpts = {...options}; 
     switch (event.currentTarget.name) {
       case "rmWhitespace": 
         tempOpts.removeWhitespace = event.currentTarget.checked; 
@@ -68,22 +95,29 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
         break;  
       case "useGroups": 
         tempOpts.useGroups = event.currentTarget.checked;
+        tempOpts.usePadding = tempOpts.useGroups; // padding is only relevant when groups are used 
+        if (tempOpts.useGroups) {
+          // If you use groups but don't remove whitespace, the results can contain multiple consecutive spaces, some meaningful and others not. This is almost certainly bad. 
+          tempOpts.removeWhitespace = true; 
+        }
+        break; 
+      case "usePadding":
+        tempOpts.usePadding = event.currentTarget.checked; 
+        if (tempOpts.usePadding) {
+          tempOpts.useGroups = true; 
+        }
         break; 
       default: 
-        console.log(`Something strange is happening.`);
+        console.warn(`Warning: handleOptionsChange was called by unknown element ${event.currentTarget.name}`);
         return; 
     }
-    console.log(tempOpts);
     setOptions(tempOpts);
   }
     
-  function handleCipherChange(event: ChangeEvent<HTMLSelectElement>): void {
-    setCipher(event.currentTarget.value);
-    setMappings(initCharMapping());
-  }
-
   function applyMonoCipher(event: any) {
-    console.log(`called applyMonoCipher(${event})`);
+    // console.log(`called applyMonoCipher(${event})`);
+    let currAlphabet = ALPHABETS.get(alphabet) ?? []; 
+
     let tempMap = mappings; 
     let tempText = "";
     let groupSize = 0; 
@@ -97,23 +131,23 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       if (mode === "decrypt") {
         shiftVal *= -1; 
       }
-      for (let i = 0; i < alphabet.length; i++) {
+      for (let i = 0; i < currAlphabet.length; i++) {
         let outIdx = i + shiftVal;
         if (outIdx < 0) {
-          outIdx += alphabet.length; 
-        } else if (outIdx > alphabet.length - 1) {
-          outIdx -= alphabet.length; 
+          outIdx += currAlphabet.length; 
+        } else if (outIdx > currAlphabet.length - 1) {
+          outIdx -= currAlphabet.length; 
         }
-        tempMap.set(alphabet[i], alphabet[outIdx]);
+        tempMap.set(currAlphabet[i], currAlphabet[outIdx]);
         if (options.preserveCase === true) {
-          tempMap.set(alphabet[i].toLowerCase(), alphabet[outIdx].toLowerCase());
+          tempMap.set(currAlphabet[i].toLowerCase(), currAlphabet[outIdx].toLowerCase());
         }
       }
     } else if (cipher === "atbash") {
-      for (let i = 0; i < alphabet.length; i++) {
-        tempMap.set(alphabet[i], alphabet[alphabet.length - 1 - i]);
+      for (let i = 0; i < currAlphabet.length; i++) {
+        tempMap.set(currAlphabet[i], currAlphabet[currAlphabet.length - 1 - i]);
         if (options.preserveCase === true) {
-          tempMap.set(alphabet[i].toLowerCase(), alphabet[alphabet.length - 1 - i].toLowerCase());
+          tempMap.set(currAlphabet[i].toLowerCase(), currAlphabet[currAlphabet.length - 1 - i].toLowerCase());
         }
       }
     } else if (cipher === "mono") {
@@ -122,7 +156,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
 
       let i = 0; 
       for (i = 0; i < keyword.length; i++) {
-        let a = alphabet[i];
+        let a = currAlphabet[i];
         let b = keyword.charAt(i); 
 
         // set letter mappings 
@@ -140,8 +174,8 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       }
       
       // deal with any part of the alphabet remaining (i.e., if keyword.length < alphabet.length)
-      for (i = i; i < ALPHABETS.latin.length; i++) {
-        let a = alphabet[i];
+      for (i = i; i < currAlphabet.length; i++) {
+        let a = currAlphabet[i];
         tempMap.set(a, a);
         if (options.preserveCase === true) {
           tempMap.set(a.toLowerCase(), a.toLowerCase());
@@ -159,7 +193,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       } 
 
       let inChar = originalText.charAt(i);
-      if (alphabet.includes(inChar.toUpperCase())) {
+      if (currAlphabet.includes(inChar.toUpperCase())) {
         if (inChar !== inChar.toUpperCase() && options.preserveCase === false) {
           tempText += tempMap.get(inChar.toUpperCase());
         } else {
@@ -169,15 +203,19 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
         tempText += inChar;
         g++; 
-      } else if (inChar !== ' ' && !alphabet.includes(inChar) && options.removeNonAlpha === false) {
+      } else if (inChar !== ' ' && !currAlphabet.includes(inChar) && options.removeNonAlpha === false) {
         tempText += inChar; 
         g++; 
       }
     }
     // pad the final block if needed 
-    if (options.useGroups === true && g > 0) {
+    if (options.useGroups && options.usePadding && g > 0) {
+      let nullChar = event.currentTarget.elements.nullChar.value; 
+      if (!currAlphabet.includes(nullChar)) {
+        nullChar = currAlphabet[currAlphabet.length - 1];
+      }
       while (g < groupSize) {
-        tempText += tempMap.get(alphabet[alphabet.length - 1]);
+        tempText += tempMap.get(nullChar);
         g++; 
       }
     }
@@ -186,7 +224,8 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   function applyPolyCipher(event: any) {
-    console.log(`called applyPolyCipher(${event})`);
+    // console.log(`called applyPolyCipher(${event})`);
+    let currAlphabet = ALPHABETS.get(alphabet) ?? [];
     let tempText = "";
     let groupSize = 0; 
     if (options.useGroups) {
@@ -206,32 +245,32 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
         } 
 
         let inChar = originalText.charAt(i);
-        let charIdx = alphabet.indexOf(inChar.toUpperCase());
+        let charIdx = currAlphabet.indexOf(inChar.toUpperCase());
 
-        if (alphabet.includes(inChar.toUpperCase())) {
+        if (currAlphabet.includes(inChar.toUpperCase())) {
           if (mode === "encrypt") {
-            charIdx += alphabet.indexOf(keyword.charAt(k));
-            if (charIdx >= alphabet.length) {
-              charIdx -= alphabet.length;
+            charIdx += currAlphabet.indexOf(keyword.charAt(k));
+            if (charIdx >= currAlphabet.length) {
+              charIdx -= currAlphabet.length;
             }
           } else if (mode === "decrypt") {
-            charIdx -= alphabet.indexOf(keyword.charAt(i));
+            charIdx -= currAlphabet.indexOf(keyword.charAt(i));
             if (charIdx < 0) {
-              charIdx += alphabet.length; 
+              charIdx += currAlphabet.length; 
             }
           }
 
           if (inChar === inChar.toUpperCase() || options.preserveCase === false) {
-            tempText += alphabet[charIdx];
+            tempText += currAlphabet[charIdx];
           } else {
-            tempText += alphabet[charIdx].toLowerCase();
+            tempText += currAlphabet[charIdx].toLowerCase();
           }
           g++; // increment current group size 
 
         } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
           tempText += inChar;
           g++; 
-        } else if (inChar !== ' ' && !alphabet.includes(inChar) && options.removeNonAlpha === false) {
+        } else if (inChar !== ' ' && !currAlphabet.includes(inChar) && options.removeNonAlpha === false) {
           tempText += inChar; 
           g++; 
         }
@@ -242,21 +281,25 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
         }
       }
       // pad the final block if needed 
-      if (options.useGroups === true && g > 0) {
+      if (options.useGroups && options.usePadding && g > 0) {
+        let nullChar = event.currentTarget.elements.nullChar.value; 
+        if (!currAlphabet.includes(nullChar)) {
+          nullChar = currAlphabet[currAlphabet.length - 1];
+        }
         while (g < groupSize) {
-          let charIdx = alphabet.length - 1; 
+          let charIdx = currAlphabet.indexOf(nullChar); 
           if (mode === "encrypt") {
-            charIdx += alphabet.indexOf(keyword.charAt(k));
-            if (charIdx > alphabet.length) {
-              charIdx -= alphabet.length;
+            charIdx += currAlphabet.indexOf(keyword.charAt(k));
+            if (charIdx > currAlphabet.length) {
+              charIdx -= currAlphabet.length;
             }
           } else if (mode === "decrypt") {
-            charIdx -= alphabet.indexOf(keyword.charAt(k));
+            charIdx -= currAlphabet.indexOf(keyword.charAt(k));
             if (charIdx < 0) {
-              charIdx += alphabet.length; 
+              charIdx += currAlphabet.length; 
             }
           }
-          tempText += alphabet[charIdx];
+          tempText += currAlphabet[charIdx];
           k++; 
           if (k === keyword.length) {
             k = 0; 
@@ -270,8 +313,12 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   function applyCipher(event: any) {
-    console.log(`called applyCipher(${event})`);
+    // console.log(`called applyCipher(${event})`);
     event.preventDefault(); 
+
+    if (alphabet === "custom") {
+      defineCustomAlphabet(event.currentTarget.elements.alphabetInput.value);
+    }
 
     if (["shift", "atbash", "mono"].includes(cipher)) {
       applyMonoCipher(event);
@@ -285,28 +332,31 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       <h2 className="m-1 text-lg font-bold">Cipher Settings</h2>
       <div className="m-1">
         <label htmlFor="ciphers">Select a cipher type: </label>
-        <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" defaultValue={"select"} onChange={handleCipherChange} disabled={!originalText}>
+        <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={cipher} onChange={e => setCipher(e.currentTarget.value)} disabled={!originalText}>
           <option value="shift">Caesar (Shift)</option>
           <option value="atbash">Atbash (Reverse Alphabet)</option>
           <option value="mono">Monoalphabetic Substitution</option>
           <option value="vigenere">Vigenère</option>
         </select>
       </div>
+      <div className="m-1">
+        <label htmlFor="alphabet">Select an alphabet: </label>
+        <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={alphabet} disabled={!originalText} onChange={e => setAlphabet(e.currentTarget.value)}>
+          {Array.from(ALPHABETS.keys().map(e => 
+            <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
+          ))}
+          <option value="custom">Define Custom Alphabet (Coming Soon)</option>
+        </select>
+      </div>
+      <form onSubmit={e => defineCustomAlphabet(e)} className={"m-1" + (alphabet !== "custom" ? " hidden" : "")}>
+        <label htmlFor="alphabetInput">Enter <strong>only</strong> the <u>uppercase letters</u> of your alphabet, <u>in order</u>:</label>
+        <input type="text" id="alphabetInput" name="alphabetInput" className={"rounded-md p-1 bg-primary/60 w-full"} placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ"></input>
+        <input type="submit" value="Save" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")}></input>
+      </form>
       <form onSubmit={applyCipher}>
-        <div className="m-1">
-          <label htmlFor="alphabet">Select an alphabet: </label>
-          <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" defaultValue={"latin"} disabled={!originalText} onChange={e => setAlphabet(ALPHABETS[e.currentTarget.value])}>
-            <option value="latin">Latin</option>
-            <option value="greek">Greek</option>
-            <option value="russian">Russian</option>
-            <option value="ukrainian">Ukrainian</option>
-            <option value="auto" disabled>Auto-Detect (Coming Soon)</option>
-            <option value="custom" disabled>Define Custom Alphabet (Coming Soon)</option>
-          </select>
-        </div>
-        <div className="m-1">
+        <div className={"m-1" + (alphabet === "custom" ? " hidden" : "")}>
           <label htmlFor="alphabetDisplay">Current Alphabet: </label>
-          <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-primary/60 w-full"} disabled value={alphabet.join("")}></input>
+          <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-primary/60 w-full"} disabled value={ALPHABETS.get(alphabet)?.join("") ?? "Error: Alphabet Not Found"}></input>
         </div>
         <div className={"m-1" + (cipher !== "shift" ? " hidden" : "")}>
           <label htmlFor="shift" >Shift Value: </label>
@@ -317,32 +367,46 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
           <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
         </div>
         <div className="m-1">
-          <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={!originalText} defaultChecked onChange={handleOptionsChange}></input>
+          <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={!originalText || options.useGroups} checked={options.removeWhitespace} onChange={handleOptionsChange}></input>
           <label htmlFor="rmWhitespace" title="Remove all spaces, tabs, and other whitespace characters before processing."> Remove Whitespace</label>
         </div>
         <div className="m-1">
-          <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" disabled={!originalText} defaultChecked onChange={handleOptionsChange}></input>
+          <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" disabled={!originalText} checked={options.removeNonAlpha} onChange={handleOptionsChange}></input>
           <label htmlFor="rmNonAlpha" title="Remove numbers, punctuation, and special characters before processing."> Remove Non-Letter Characters</label>
         </div>
         <div className="m-1">
-          <input type="checkbox" id="preserveCase" name="preserveCase" disabled={!originalText} onChange={handleOptionsChange}></input>
+          <input type="checkbox" id="preserveCase" name="preserveCase" disabled={!originalText} checked={options.preserveCase} onChange={handleOptionsChange}></input>
           <label htmlFor="preserveCase" title="Map uppercase letters to uppercase letters, and lowercase letters to lowercase letters."> Preserve Case</label>
         </div>        
-        <div className="m-1">
-          <input type="checkbox" id="useGroups" name="useGroups" disabled={!originalText} defaultChecked onChange={handleOptionsChange}></input>
-          <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks."> Use Groups</label>
-        </div>
-        <div className={"m-1" + (!options.useGroups ? " hidden" : "")}>
-          <label htmlFor="groupSize">Group Size: </label>
-          <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText}></input> 
+        <div className="flex flex-row align-center gap-8">
+          <div>
+            <div className="m-1">
+              <input type="checkbox" id="useGroups" name="useGroups" disabled={!originalText} checked={options.useGroups} onChange={handleOptionsChange}></input>
+              <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks."> Use Groups</label>
+            </div>
+            <div className="m-1">
+              <label htmlFor="groupSize">Group Size: </label>
+              <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText || !options.useGroups}></input> 
+            </div>
+          </div>
+          <div>            
+            <div className="m-1">
+              <input type="checkbox" id="usePadding" name="usePadding" disabled={!originalText || !options.useGroups} checked={options.usePadding} onChange={handleOptionsChange}></input>
+              <label htmlFor="usePadding" title="Fill any extra space in the final block with a specific letter before processing."> Pad End</label>
+            </div>
+            <div className="m-1">
+              <label htmlFor="nullChar">Null Character: </label>
+              <input type="text" id="nullChar" name="nullChar" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80 w-8"} maxLength={1} defaultValue={alphabet !== "custom" ? ALPHABETS.get(alphabet)![ALPHABETS.get(alphabet)!.length - 1] : "X"} disabled={!originalText || !options.usePadding}></input> 
+            </div>
+          </div>
         </div>
         <input type="submit" value="Apply Changes" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")} disabled={!originalText}></input>
       </form> 
-      {["shift", "atbash", "mono"].includes(cipher) ? 
+      {alphabet !== "custom" && ["shift", "atbash", "mono"].includes(cipher) ? 
         <CharMappings 
           mappings={mappings} 
           mode={mode} 
-          alphabet={alphabet}
+          alphabet={ALPHABETS.get(alphabet) ?? []}
           key={currentText}>
         </CharMappings>
         : ""

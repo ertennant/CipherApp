@@ -36,7 +36,7 @@ export default function Page() {
         />
         <CipherControlPanel 
           originalText={originalText}
-          key={originalText}
+          // key={originalText}
           currentText={currentText}
           onUpdateText={handleUpdateText}
           mode={mode}
