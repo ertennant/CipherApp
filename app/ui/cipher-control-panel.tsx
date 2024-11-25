@@ -342,19 +342,19 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       <div className="m-1">
         <label htmlFor="alphabet">Select an alphabet: </label>
         <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={alphabet} disabled={!originalText} onChange={e => setAlphabet(e.currentTarget.value)}>
-          {Array.from(ALPHABETS.keys().map(e => 
+          {(Array.from(ALPHABETS.keys()).map(e => 
             <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
           ))}
-          <option value="custom">Define Custom Alphabet (Coming Soon)</option>
+          <option value="custom">Define Custom Alphabet</option>
         </select>
       </div>
-      <form onSubmit={e => defineCustomAlphabet(e)} className={"m-1" + (alphabet !== "custom" ? " hidden" : "")}>
+      <form onSubmit={e => defineCustomAlphabet(e)} className={"m-1 flex flex-col items-start" + (alphabet !== "custom" ? " hidden" : "")}>
         <label htmlFor="alphabetInput">Enter <strong>only</strong> the <u>uppercase letters</u> of your alphabet, <u>in order</u>:</label>
-        <input type="text" id="alphabetInput" name="alphabetInput" className={"rounded-md p-1 bg-primary/60 w-full"} placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ"></input>
-        <input type="submit" value="Save" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")}></input>
+        <input type="text" id="alphabetInput" name="alphabetInput" className={"rounded-md p-1 bg-primary/60 self-stretch"} placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ"></input>
+        <input type="submit" value="Save" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1 self-center" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")}></input>
       </form>
-      <form onSubmit={applyCipher}>
-        <div className={"m-1" + (alphabet === "custom" ? " hidden" : "")}>
+      <form onSubmit={applyCipher} className="flex flex-col items-start">
+        <div className={"m-1 self-stretch" + (alphabet === "custom" ? " hidden" : "")}>
           <label htmlFor="alphabetDisplay">Current Alphabet: </label>
           <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-primary/60 w-full"} disabled value={ALPHABETS.get(alphabet)?.join("") ?? "Error: Alphabet Not Found"}></input>
         </div>
@@ -400,7 +400,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
             </div>
           </div>
         </div>
-        <input type="submit" value="Apply Changes" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")} disabled={!originalText}></input>
+        <input type="submit" value="Apply Changes" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1 w-min self-center " + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")} disabled={!originalText}></input>
       </form> 
       {alphabet !== "custom" && ["shift", "atbash", "mono"].includes(cipher) ? 
         <CharMappings 
