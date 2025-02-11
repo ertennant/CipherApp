@@ -41,9 +41,12 @@ type AppProps = {
   currentText: string, 
   onUpdateText: any, 
   mode: string
+  isExpanded: boolean, 
+  onClick: any, 
+  className?: string, 
 }
 
-export default function CipherControlPanel({originalText, currentText, onUpdateText, mode}: AppProps) {
+export default function CipherControlPanel({originalText, currentText, onUpdateText, mode, isExpanded=true, onClick, className}: AppProps) {
   const [cipher, setCipher] = useState("shift");
   const [alphabet, setAlphabet] = useState("latin");
   const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(new Map());
@@ -234,6 +237,10 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
 
     if (cipher === "vigenere") {
       let keyword = event.currentTarget.elements.keyword.value; 
+      if (!keyword) {
+        console.log("keyword is empty");
+        return; 
+      }
       keyword = keyword.toUpperCase(); 
 
       let g = 0; // group index counter 
@@ -328,89 +335,96 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   return (
-    <div className={"flex grow flex-col h-fit w-1/2 rounded-lg p-2 border border-primary bg-primary/55 backdrop-blur-md" + (!originalText ? " text-text-disabled" : " text-text-normal")}>
-      <h2 className="m-1 text-lg font-bold">Cipher Settings</h2>
-      <div className="m-1">
-        <label htmlFor="ciphers">Select a cipher type: </label>
-        <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={cipher} onChange={e => setCipher(e.currentTarget.value)} disabled={!originalText}>
-          <option value="shift">Caesar (Shift)</option>
-          <option value="atbash">Atbash (Reverse Alphabet)</option>
-          <option value="mono">Monoalphabetic Substitution</option>
-          <option value="vigenere">Vigenère</option>
-        </select>
-      </div>
-      <div className="m-1">
-        <label htmlFor="alphabet">Select an alphabet: </label>
-        <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={alphabet} disabled={!originalText} onChange={e => setAlphabet(e.currentTarget.value)}>
-          {(Array.from(ALPHABETS.keys()).map(e => 
-            <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
-          ))}
-          <option value="custom">Define Custom Alphabet</option>
-        </select>
-      </div>
-      <form onSubmit={e => defineCustomAlphabet(e)} className={"m-1 flex flex-col items-start" + (alphabet !== "custom" ? " hidden" : "")}>
-        <label htmlFor="alphabetInput">Enter <strong>only</strong> the <u>uppercase letters</u> of your alphabet, <u>in order</u>:</label>
-        <input type="text" id="alphabetInput" name="alphabetInput" className={"rounded-md p-1 bg-primary/60 self-stretch"} placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ"></input>
-        <input type="submit" value="Save" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1 self-center" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")}></input>
-      </form>
-      <form onSubmit={applyCipher} className="flex flex-col items-start">
-        <div className={"m-1 self-stretch" + (alphabet === "custom" ? " hidden" : "")}>
-          <label htmlFor="alphabetDisplay">Current Alphabet: </label>
-          <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-primary/60 w-full"} disabled value={ALPHABETS.get(alphabet)?.join("") ?? "Error: Alphabet Not Found"}></input>
-        </div>
-        <div className={"m-1" + (cipher !== "shift" ? " hidden" : "")}>
-          <label htmlFor="shift" >Shift Value: </label>
-          <input type="number" id="shift" name="shift" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={alphabet.length} defaultValue={0} disabled={!originalText}></input> 
-        </div>
-        <div className={"m-1" + (!["mono", "vigenere"].includes(cipher) ? " hidden" : "")}>
-          <label htmlFor="keyword">Keyword: </label>
-          <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
+    <div className={(isExpanded ? "row-span-9 px-2 pb-2 " : "row-span-1 align-center ") + "order-3 md:col-span-3 md:row-span-full justify-center md:justify-start flex flex-col p-2 border border-primary shadow-[0_-8px_10px_-5px] shadow-slate-800/40"}>
+      <h2 className="m-1 text-lg text-center md:text-left hover:text-white font-bold cursor-pointer" onClick={onClick}>Cipher Settings</h2>
+      <div className={(!isExpanded ? "hidden md:block" : "md:block") + " overflow-scroll"}>
+        <div className="m-1">
+          <label htmlFor="ciphers">Select a cipher type: </label>
+          <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={cipher} onChange={e => setCipher(e.currentTarget.value)} disabled={!originalText}>
+            <option value="shift">Caesar (Shift)</option>
+            <option value="atbash">Atbash (Reverse Alphabet)</option>
+            <option value="mono">Monoalphabetic Substitution</option>
+            <option value="vigenere">Vigenère</option>
+          </select>
         </div>
         <div className="m-1">
-          <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={!originalText || options.useGroups} checked={options.removeWhitespace} onChange={handleOptionsChange}></input>
-          <label htmlFor="rmWhitespace" title="Remove all spaces, tabs, and other whitespace characters before processing."> Remove Whitespace</label>
+          <label htmlFor="alphabet">Select an alphabet: </label>
+          <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={alphabet} disabled={!originalText} onChange={e => setAlphabet(e.currentTarget.value)}>
+            {(Array.from(ALPHABETS.keys()).map(e => 
+              <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
+            ))}
+            <option value="custom">Define Custom Alphabet</option>
+          </select>
         </div>
-        <div className="m-1">
-          <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" disabled={!originalText} checked={options.removeNonAlpha} onChange={handleOptionsChange}></input>
-          <label htmlFor="rmNonAlpha" title="Remove numbers, punctuation, and special characters before processing."> Remove Non-Letter Characters</label>
-        </div>
-        <div className="m-1">
-          <input type="checkbox" id="preserveCase" name="preserveCase" disabled={!originalText} checked={options.preserveCase} onChange={handleOptionsChange}></input>
-          <label htmlFor="preserveCase" title="Map uppercase letters to uppercase letters, and lowercase letters to lowercase letters."> Preserve Case</label>
-        </div>        
-        <div className="flex flex-row align-center gap-8">
-          <div>
-            <div className="m-1">
-              <input type="checkbox" id="useGroups" name="useGroups" disabled={!originalText} checked={options.useGroups} onChange={handleOptionsChange}></input>
-              <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks."> Use Groups</label>
+        <form onSubmit={e => defineCustomAlphabet(e)} className={"m-1 flex flex-col items-start" + (alphabet !== "custom" ? " hidden" : "")}>
+          <label htmlFor="alphabetInput">Enter <strong>only</strong> the <u>uppercase letters</u> of your alphabet, <u>in order</u>:</label>
+          <input type="text" id="alphabetInput" name="alphabetInput" className={"rounded-md p-1 bg-primary/60 self-stretch"} placeholder="ABCDEFGHIJKLMNOPQRSTUVWXYZ"></input>
+          <input type="submit" value="Save" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1 self-center" + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")}></input>
+        </form>
+        <form onSubmit={applyCipher} className="flex flex-col items-start">
+          <div className={"m-1 self-stretch" + (alphabet === "custom" ? " hidden" : "")}>
+            <label htmlFor="alphabetDisplay">Current Alphabet: </label>
+            <input type="text" id="alphabetDisplay" name="alphabetDisplay" className={"rounded-md p-1 bg-primary/60 w-full"} disabled value={ALPHABETS.get(alphabet)?.join("") ?? "Error: Alphabet Not Found"}></input>
+          </div>
+          <div className={"m-1" + (cipher !== "shift" ? " hidden" : "")}>
+            <label htmlFor="shift" >Shift Value: </label>
+            <input type="number" id="shift" name="shift" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={alphabet.length} defaultValue={0} disabled={!originalText}></input> 
+          </div>
+          <div className={"m-1" + (!["mono", "vigenere"].includes(cipher) ? " hidden" : "")}>
+            <label htmlFor="keyword">Keyword: </label>
+            <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
+          </div>
+          <div className="m-1">
+            <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={!originalText || options.useGroups} checked={options.removeWhitespace} onChange={handleOptionsChange}></input>
+            <label htmlFor="rmWhitespace" title="Remove all spaces, tabs, and other whitespace characters before processing."> Remove Whitespace</label>
+          </div>
+          <div className="m-1">
+            <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" disabled={!originalText} checked={options.removeNonAlpha} onChange={handleOptionsChange}></input>
+            <label htmlFor="rmNonAlpha" title="Remove numbers, punctuation, and special characters before processing."> Remove Non-Letter Characters</label>
+          </div>
+          <div className="m-1">
+            <input type="checkbox" id="preserveCase" name="preserveCase" disabled={!originalText} checked={options.preserveCase} onChange={handleOptionsChange}></input>
+            <label htmlFor="preserveCase" title="Map uppercase letters to uppercase letters, and lowercase letters to lowercase letters."> Preserve Case</label>
+          </div>        
+          <div className="flex flex-row align-center gap-8">
+            <div>
+              <div className="m-1">
+                <input type="checkbox" id="useGroups" name="useGroups" disabled={!originalText} checked={options.useGroups} onChange={handleOptionsChange}></input>
+                <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks."> Use Groups</label>
+              </div>
+              <div className="m-1">
+                <label htmlFor="groupSize">Group Size: </label>
+                <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText || !options.useGroups}></input> 
+              </div>
             </div>
-            <div className="m-1">
-              <label htmlFor="groupSize">Group Size: </label>
-              <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText || !options.useGroups}></input> 
+            <div>            
+              <div className="m-1">
+                <input type="checkbox" id="usePadding" name="usePadding" disabled={!originalText || !options.useGroups} checked={options.usePadding} onChange={handleOptionsChange}></input>
+                <label htmlFor="usePadding" title="Fill any extra space in the final block with a specific letter before processing."> Pad End</label>
+              </div>
+              <div className="m-1">
+                <label htmlFor="nullChar">Null Character: </label>
+                <input type="text" id="nullChar" name="nullChar" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80 w-8"} maxLength={1} defaultValue={alphabet !== "custom" ? ALPHABETS.get(alphabet)![ALPHABETS.get(alphabet)!.length - 1] : "X"} disabled={!originalText || !options.usePadding}></input> 
+              </div>
             </div>
           </div>
-          <div>            
-            <div className="m-1">
-              <input type="checkbox" id="usePadding" name="usePadding" disabled={!originalText || !options.useGroups} checked={options.usePadding} onChange={handleOptionsChange}></input>
-              <label htmlFor="usePadding" title="Fill any extra space in the final block with a specific letter before processing."> Pad End</label>
-            </div>
-            <div className="m-1">
-              <label htmlFor="nullChar">Null Character: </label>
-              <input type="text" id="nullChar" name="nullChar" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80 w-8"} maxLength={1} defaultValue={alphabet !== "custom" ? ALPHABETS.get(alphabet)![ALPHABETS.get(alphabet)!.length - 1] : "X"} disabled={!originalText || !options.usePadding}></input> 
-            </div>
-          </div>
-        </div>
-        <input type="submit" value="Apply Changes" className={"bg-primary/80 border border-primary rounded-md py-1 px-2 m-1 w-min self-center " + (!originalText ? "" : " hover:bg-primary hover:cursor-pointer")} disabled={!originalText}></input>
-      </form> 
-      {alphabet !== "custom" && ["shift", "atbash", "mono"].includes(cipher) ? 
-        <CharMappings 
-          mappings={mappings} 
-          mode={mode} 
-          alphabet={ALPHABETS.get(alphabet) ?? []}
-          key={currentText}>
-        </CharMappings>
-        : ""
-      }
+          <input 
+            type="submit" 
+            value="Apply Changes" 
+            className={"bg-primary/80 rounded-md py-1 px-2 m-1 w-min self-center cursor-pointer transition duration-300 " + (originalText ? "hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800" : "")} 
+            disabled={!originalText}
+          ></input>
+        </form> 
+        {alphabet !== "custom" && ["shift", "atbash", "mono"].includes(cipher) ? 
+          <CharMappings 
+            mappings={mappings} 
+            mode={mode} 
+            alphabet={ALPHABETS.get(alphabet) ?? []}
+            key={currentText}>
+          </CharMappings>
+          : ""
+        }
+      </div>
     </div>
   )
 }
