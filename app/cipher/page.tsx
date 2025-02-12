@@ -10,18 +10,23 @@ export default function Page() {
   const [currentText, setCurrentText] = useState("");
   const [mode, setMode] = useState("encrypt");
   const [activePanel, setActivePanel] = useState("input");
+  const [lastActiveText, setLastActiveText] = useState("input");
 
   function handleInputText(text: string) {
     console.log(`called handleInputText(${text})`);
     setOriginalText(text);
     setCurrentText(text);
+    setLastActiveText("output");
     setActivePanel("settings");
+    console.log(`lastActiveText = ${lastActiveText}, activePanel = ${activePanel}`);
   }
 
   function handleUpdateText(text: string) {
     console.log(`called handleUpdateText(${text})`);
     setCurrentText(text);
+    setLastActiveText("output");
     setActivePanel("output");
+    console.log(`lastActiveText = ${lastActiveText}, activePanel = ${activePanel}`);
   }
 
   return (
@@ -37,18 +42,20 @@ export default function Page() {
         content={originalText}
         placeholder="Enter your message here."
         readOnly={false}
-        isExpanded={activePanel === "input"}
+        // isExpanded={activePanel === "input" ? 2 : activeText === "input" ? 1 : 0}
         onSubmit={handleInputText}
-        onClick={() => setActivePanel("input")}
+        onClick={() => {setActivePanel("input"); setLastActiveText("input");}}
+        visibility={activePanel === "input" ? "all" : lastActiveText === "input" ? "md" : "xl"}
       >
       </TextPanel>
       <TextPanel
         title={mode === "encrypt" ? "Ciphertext" : "Plaintext"}
         content={currentText}
-        isExpanded={activePanel === "output"}
+        // isExpanded={activePanel === "output" ? 2 : activeText === "output" ? 1 : 0}
         placeholder="Result will be displayed here."
         readOnly={true}
-        onClick={() => setActivePanel("output")}
+        onClick={() => {setActivePanel("output"); setLastActiveText("output");}}
+        visibility={activePanel === "output" ? "all" : lastActiveText === "output" ? "md" : "xl"}
       >
       </TextPanel>
       <CipherControlPanel 

@@ -43,25 +43,25 @@ type AppProps = {
   mode: string
   isExpanded: boolean, 
   onClick: any, 
-  className?: string, 
 }
 
-export default function CipherControlPanel({originalText, currentText, onUpdateText, mode, isExpanded=true, onClick, className}: AppProps) {
+export default function CipherControlPanel({originalText, currentText, onUpdateText, mode, isExpanded=true, onClick}: AppProps) {
   const [cipher, setCipher] = useState("shift");
   const [alphabet, setAlphabet] = useState("latin");
   const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(new Map());
   const [options, setOptions] = useState({removeWhitespace: true, removeNonAlpha: true, preserveCase: false, useGroups: true, usePadding: true});
-
-  function initCharMapping() {
-    let m : Map<string, string> = new Map(); 
-    if (alphabet) {
-      for (const chr of alphabet) {
-        m.set(chr, chr);
-      }
-      console.log(m);
-    }
-    return m; 
-  }
+  const [activeSubPanel, setActiveSubPanel] = useState("controls");  
+  
+  // function initCharMapping() {
+  //   let m : Map<string, string> = new Map(); 
+  //   if (alphabet) {
+  //     for (const chr of alphabet) {
+  //       m.set(chr, chr);
+  //     }
+  //     console.log(m);
+  //   }
+  //   return m; 
+  // }
 
   function defineCustomAlphabet(event: any): void {
     event.preventDefault();
@@ -335,9 +335,12 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   return (
-    <div className={(isExpanded ? "row-span-9 px-2 pb-2 " : "row-span-1 align-center ") + "order-3 md:col-span-3 md:row-span-full justify-center md:justify-start flex flex-col p-2 border border-primary shadow-[0_-8px_10px_-5px] shadow-slate-800/40"}>
-      <h2 className="m-1 text-lg text-center md:text-left hover:text-white font-bold cursor-pointer" onClick={onClick}>Cipher Settings</h2>
-      <div className={(!isExpanded ? "hidden md:block" : "md:block") + " overflow-scroll"}>
+    <div className={(isExpanded ? "row-span-9 px-2 pb-2 " : "row-span-1 align-center ") + "order-3 md:col-span-3 md:row-span-full justify-start md:justify-start flex flex-col p-2 border border-primary shadow-[0_-8px_10px_-5px] shadow-slate-800/40"}>
+      <h2 
+        className="m-1 text-lg text-center md:text-left hover:text-white font-bold cursor-pointer" 
+        onClick={onClick}
+      >{activeSubPanel === "controls" ? "Cipher Settings" : activeSubPanel === "mappings" ? "Letter Mappings" : ""}</h2>
+      <div className={(isExpanded && activeSubPanel === "controls" ? "block overflow-scroll" : activeSubPanel === "controls" ? "hidden md:block md:overflow-scroll" : "hidden")}>
         <div className="m-1">
           <label htmlFor="ciphers">Select a cipher type: </label>
           <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={cipher} onChange={e => setCipher(e.currentTarget.value)} disabled={!originalText}>
@@ -415,16 +418,24 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
             disabled={!originalText}
           ></input>
         </form> 
-        {alphabet !== "custom" && ["shift", "atbash", "mono"].includes(cipher) ? 
-          <CharMappings 
-            mappings={mappings} 
-            mode={mode} 
-            alphabet={ALPHABETS.get(alphabet) ?? []}
-            key={currentText}>
-          </CharMappings>
-          : ""
-        }
       </div>
+      {alphabet !== "custom" && ["shift", "atbash", "mono"].includes(cipher) ? 
+        <CharMappings 
+          mappings={mappings} 
+          mode={mode} 
+          alphabet={ALPHABETS.get(alphabet) ?? []}
+          key={currentText}
+          visibility={(isExpanded && activeSubPanel === "mappings") ? "all" : activeSubPanel === "mappings" ? "md" : "none"}
+        >
+        </CharMappings>
+        : ""
+      }
+      <button 
+        type="button" 
+        className={"bg-primary/80 rounded-md py-1 px-2 m-1 w-min text-nowrap self-center cursor-pointer transition duration-300 " + (originalText ? "hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800 " : "") + (isExpanded ? "block" : "md:block hidden")} 
+        disabled={!originalText}
+        onClick={() => activeSubPanel === "controls" ? setActiveSubPanel("mappings") : setActiveSubPanel("controls")}
+      >{activeSubPanel === "controls" ? "View Letter Mappings" : "View Cipher Settings"}</button>
     </div>
   )
 }
