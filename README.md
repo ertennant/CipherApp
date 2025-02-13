@@ -10,7 +10,7 @@ This project provides tools for applying several historically interesting cipher
 
 ### Step-by-Step Instructions 
 
-This project is currently hosted through GitHub Pages. Open []() in your browser to start. 
+This project is currently hosted through GitHub Pages. Open [https://ertennant.github.io/CipherApp/](https://ertennant.github.io/CipherApp/) in your browser to start. 
 1. Select `Encrypt` if you wish to encrypt your text, `Decrypt` if you wish to decrypt it. 
 2. Input your text and click `Done`. 
 3. The `Cipher Settings` panel allows you to set the parameters of your cipher. 
