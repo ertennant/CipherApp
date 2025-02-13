@@ -1,4 +1,8 @@
-import { Dispatch, SetStateAction } from "react"
+/** Component for buttons to toggle between Encrypt and Decrypt modes. 
+  * Path: /cipher-app/app/ui/radio-button-group.tsx
+  */
+
+import { Dispatch, SetStateAction } from "react";
 
 type RadioButtonGroupProps = {
   active: string, // currently active option  

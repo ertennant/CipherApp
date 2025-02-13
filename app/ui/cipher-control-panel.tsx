@@ -1,3 +1,7 @@
+/** Component for displaying and adjusting cipher settings.  
+  * Path: /cipher-app/app/ui/cipher-control-panel.tsx
+  */
+
 "use client";
 import { useState, SetStateAction, ChangeEvent, MouseEvent, KeyboardEvent } from "react";
 import CharMappings from "./char-mappings";
@@ -107,7 +111,6 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
     
   function applyMonoCipher(event: any) {
-    // console.log(`called applyMonoCipher(${event})`);
     let currAlphabet = ALPHABETS.get(alphabet) ?? []; 
 
     let tempMap = mappings; 
@@ -216,7 +219,6 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   function applyPolyCipher(event: any) {
-    // console.log(`called applyPolyCipher(${event})`);
     let currAlphabet = ALPHABETS.get(alphabet) ?? [];
     let tempText = "";
     let groupSize = 0; 
@@ -309,7 +311,6 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   }
 
   function applyCipher(event: any) {
-    // console.log(`called applyCipher(${event})`);
     event.preventDefault(); 
 
     if (alphabet === "custom") {

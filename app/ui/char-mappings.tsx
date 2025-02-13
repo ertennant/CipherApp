@@ -1,3 +1,7 @@
+/** Component for displaying plaintext-to-ciphertext letter mappings (for monoalphabetic ciphers only).
+  * Path: /cipher-app/app/ui/char-mappings.tsx
+  */
+
 import Image from "next/image";
 import arrowDown from '../../public/arrow-down.svg';
 import arrowUp from '../../public/arrow-up.svg';

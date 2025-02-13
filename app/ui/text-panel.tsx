@@ -1,3 +1,7 @@
+/** Component for displaying and entering plaintext or ciphertext.  
+  * Path: /cipher-app/app/ui/text-panel.tsx 
+  */
+
 "use client";
 
 import { useState } from "react";
@@ -8,7 +12,6 @@ type TextPanelProps = {
   content: string, 
   placeholder: string, 
   readOnly: boolean, 
-  // isExpanded?: number, 
   onSubmit?: (text: string) => void, 
   onClick?: () => void, 
   visibility: string, 
@@ -41,17 +44,6 @@ export default function TextPanel({title, content, placeholder, readOnly, onSubm
             >
             </Image>
           </button>
-          {/* {!readOnly ?
-            <button className="rounded-full hover:bg-primary/60 p-2">
-              <Image
-                src="./edit-icon.svg"
-                alt="Edit Text"
-                height={20}
-                width={20}
-              ></Image>
-            </button>
-            : ""
-          } */}
         </div>
       </div>
       <div className={(visibility === "all" ? "block" : visibility === "md" ? "hidden md:block" : "hidden") + " xl:block flex flex-col grow"}>
