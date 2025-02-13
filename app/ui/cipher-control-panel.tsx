@@ -39,10 +39,10 @@ const ALPHABETS : Map<string, string[]> = new Map([
 type AppProps = {
   originalText: string, 
   currentText: string, 
-  onUpdateText: any, 
+  onUpdateText: (text: string) => void, 
   mode: string
   isExpanded: boolean, 
-  onClick: any, 
+  onClick: () => void, 
 }
 
 export default function CipherControlPanel({originalText, currentText, onUpdateText, mode, isExpanded=true, onClick}: AppProps) {
@@ -52,17 +52,6 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   const [options, setOptions] = useState({removeWhitespace: true, removeNonAlpha: true, preserveCase: false, useGroups: true, usePadding: true});
   const [activeSubPanel, setActiveSubPanel] = useState("controls");  
   
-  // function initCharMapping() {
-  //   let m : Map<string, string> = new Map(); 
-  //   if (alphabet) {
-  //     for (const chr of alphabet) {
-  //       m.set(chr, chr);
-  //     }
-  //     console.log(m);
-  //   }
-  //   return m; 
-  // }
-
   function defineCustomAlphabet(event: any): void {
     event.preventDefault();
     // validate, then set

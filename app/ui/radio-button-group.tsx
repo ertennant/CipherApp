@@ -1,7 +1,9 @@
+import { Dispatch, SetStateAction } from "react"
+
 type RadioButtonGroupProps = {
   active: string, // currently active option  
   options: string[], // array of options 
-  onChange: any, // function called when an option is selected 
+  onChange: Dispatch<SetStateAction<string>>, // function called when an option is selected 
 }
 
 export default function RadioButtonGroup({active, options, onChange}: RadioButtonGroupProps) {

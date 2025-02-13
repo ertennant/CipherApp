@@ -9,8 +9,8 @@ type TextPanelProps = {
   placeholder: string, 
   readOnly: boolean, 
   // isExpanded?: number, 
-  onSubmit?: any, 
-  onClick?: any, 
+  onSubmit?: (text: string) => void, 
+  onClick?: () => void, 
   visibility: string, 
 }
 
@@ -64,10 +64,10 @@ export default function TextPanel({title, content, placeholder, readOnly, onSubm
           onChange={(e) => setValue(e.currentTarget.value)}
         ></textarea>
       </div>
-      {!readOnly ? 
+      {!readOnly && (onSubmit !== undefined) ? 
         <button 
           type="button" 
-          onClick={() => onSubmit(value)}
+          onClick={() => onSubmit(value)} 
           className={(visibility === "all" ? "block" : visibility === "md" ? "hidden md:block" : "hidden") + " xl:block bg-primary/80 mt-1 rounded-md w-full p-2 hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800 cursor-pointer transition duration-300"}
         >
           Done
