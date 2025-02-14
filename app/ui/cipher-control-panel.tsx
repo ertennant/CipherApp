@@ -5,6 +5,7 @@
 "use client";
 import { useState, SetStateAction, ChangeEvent, MouseEvent, KeyboardEvent } from "react";
 import CharMappings from "./char-mappings";
+import { mapCaesar, mapAtbash, mapMonoSubstitution, processMonoCipherText, applyVigenere } from "../cipher";
 
 const ALPHABETS : Map<string, string[]> = new Map([
   ["latin", [
@@ -53,7 +54,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
   const [cipher, setCipher] = useState("shift");
   const [alphabet, setAlphabet] = useState("latin");
   const [mappings, setMappings] : [Map<string, string>, React.Dispatch<SetStateAction<Map<string, string>>>] = useState(new Map());
-  const [options, setOptions] = useState({removeWhitespace: true, removeNonAlpha: true, preserveCase: false, useGroups: true, usePadding: true});
+  const [options, setOptions] = useState({removeWhitespace: true, removeNonAlpha: true, preserveCase: false, useGroups: true, groupSize: 5, usePadding: true, nullCharacter: alphabet[alphabet.length - 1]});
   const [activeSubPanel, setActiveSubPanel] = useState("controls");  
   
   function defineCustomAlphabet(event: any): void {
@@ -103,211 +104,17 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
           tempOpts.useGroups = true; 
         }
         break; 
+      case "groupSize":
+        tempOpts.groupSize = parseInt(event.currentTarget.value); 
+        break; 
+      case "nullChar":
+        tempOpts.nullCharacter = event.currentTarget.value; 
+        break; 
       default: 
         console.warn(`Warning: handleOptionsChange was called by unknown element ${event.currentTarget.name}`);
         return; 
     }
     setOptions(tempOpts);
-  }
-    
-  function applyMonoCipher(event: any) {
-    let currAlphabet = ALPHABETS.get(alphabet) ?? []; 
-
-    let tempMap = mappings; 
-    let tempText = "";
-    let groupSize = 0; 
-    if (options.useGroups) {
-      groupSize = parseInt(event.currentTarget.elements.groupSize.value); 
-    }
-
-    // Set up tempMap for the current cipher     
-    if (cipher === "shift") {
-      let shiftVal = parseInt(event.currentTarget.elements.shift.value); 
-      if (mode === "decrypt") {
-        shiftVal *= -1; 
-      }
-      for (let i = 0; i < currAlphabet.length; i++) {
-        let outIdx = i + shiftVal;
-        if (outIdx < 0) {
-          outIdx += currAlphabet.length; 
-        } else if (outIdx > currAlphabet.length - 1) {
-          outIdx -= currAlphabet.length; 
-        }
-        tempMap.set(currAlphabet[i], currAlphabet[outIdx]);
-        if (options.preserveCase === true) {
-          tempMap.set(currAlphabet[i].toLowerCase(), currAlphabet[outIdx].toLowerCase());
-        }
-      }
-    } else if (cipher === "atbash") {
-      for (let i = 0; i < currAlphabet.length; i++) {
-        tempMap.set(currAlphabet[i], currAlphabet[currAlphabet.length - 1 - i]);
-        if (options.preserveCase === true) {
-          tempMap.set(currAlphabet[i].toLowerCase(), currAlphabet[currAlphabet.length - 1 - i].toLowerCase());
-        }
-      }
-    } else if (cipher === "mono") {
-      let keyword = event.currentTarget.elements.keyword.value; 
-      keyword = keyword.toUpperCase(); 
-
-      let i = 0; 
-      for (i = 0; i < keyword.length; i++) {
-        let a = currAlphabet[i];
-        let b = keyword.charAt(i); 
-
-        // set letter mappings 
-        if (mode === "encrypt") {
-          tempMap.set(a, b);
-          if (options.preserveCase === true) {
-            tempMap.set(a.toLowerCase(), b.toLowerCase());
-          }
-        } else if (mode === "decrypt") {
-          tempMap.set(b, a);
-          if (options.preserveCase === true) {
-            tempMap.set(b.toLowerCase(), a.toLowerCase());
-          }
-        }
-      }
-      
-      // deal with any part of the alphabet remaining (i.e., if keyword.length < alphabet.length)
-      for (i = i; i < currAlphabet.length; i++) {
-        let a = currAlphabet[i];
-        tempMap.set(a, a);
-        if (options.preserveCase === true) {
-          tempMap.set(a.toLowerCase(), a.toLowerCase());
-        }
-      }
-    } 
-    setMappings(tempMap);
-
-    let g = 0; // group index counter
-    for (let i = 0; i < originalText.length; i++) {
-      // if useGroups is on, insert a space if one is needed 
-      if (options.useGroups === true && g === groupSize) {
-        tempText += ' ';
-        g = 0; 
-      } 
-
-      let inChar = originalText.charAt(i);
-      if (currAlphabet.includes(inChar.toUpperCase())) {
-        if (inChar !== inChar.toUpperCase() && options.preserveCase === false) {
-          tempText += tempMap.get(inChar.toUpperCase());
-        } else {
-          tempText += tempMap.get(inChar);
-        }
-        g++; 
-      } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
-        tempText += inChar;
-        g++; 
-      } else if (inChar !== ' ' && !currAlphabet.includes(inChar) && options.removeNonAlpha === false) {
-        tempText += inChar; 
-        g++; 
-      }
-    }
-    // pad the final block if needed 
-    if (options.useGroups && options.usePadding && g > 0) {
-      let nullChar = event.currentTarget.elements.nullChar.value; 
-      if (!currAlphabet.includes(nullChar)) {
-        nullChar = currAlphabet[currAlphabet.length - 1];
-      }
-      while (g < groupSize) {
-        tempText += tempMap.get(nullChar);
-        g++; 
-      }
-    }
-    console.log(tempText);
-    onUpdateText(tempText);
-  }
-
-  function applyPolyCipher(event: any) {
-    let currAlphabet = ALPHABETS.get(alphabet) ?? [];
-    let tempText = "";
-    let groupSize = 0; 
-    if (options.useGroups) {
-      groupSize = parseInt(event.currentTarget.elements.groupSize.value); 
-    }
-
-    if (cipher === "vigenere") {
-      let keyword = event.currentTarget.elements.keyword.value; 
-      if (!keyword) {
-        console.log("keyword is empty");
-        return; 
-      }
-      keyword = keyword.toUpperCase(); 
-
-      let g = 0; // group index counter 
-      let k = 0; // keyword index 
-      for (let i = 0; i < originalText.length; i++) {
-        if (options.useGroups === true && g === groupSize) {
-          tempText += ' ';
-          g = 0; 
-        } 
-
-        let inChar = originalText.charAt(i);
-        let charIdx = currAlphabet.indexOf(inChar.toUpperCase());
-
-        if (currAlphabet.includes(inChar.toUpperCase())) {
-          if (mode === "encrypt") {
-            charIdx += currAlphabet.indexOf(keyword.charAt(k));
-            if (charIdx >= currAlphabet.length) {
-              charIdx -= currAlphabet.length;
-            }
-          } else if (mode === "decrypt") {
-            charIdx -= currAlphabet.indexOf(keyword.charAt(i));
-            if (charIdx < 0) {
-              charIdx += currAlphabet.length; 
-            }
-          }
-
-          if (inChar === inChar.toUpperCase() || options.preserveCase === false) {
-            tempText += currAlphabet[charIdx];
-          } else {
-            tempText += currAlphabet[charIdx].toLowerCase();
-          }
-          g++; // increment current group size 
-
-        } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
-          tempText += inChar;
-          g++; 
-        } else if (inChar !== ' ' && !currAlphabet.includes(inChar) && options.removeNonAlpha === false) {
-          tempText += inChar; 
-          g++; 
-        }
-  
-        k++; // move to next keyword letter; go back to keyword[0] if you're at the end 
-        if (k == keyword.length) {
-          k = 0; 
-        }
-      }
-      // pad the final block if needed 
-      if (options.useGroups && options.usePadding && g > 0) {
-        let nullChar = event.currentTarget.elements.nullChar.value; 
-        if (!currAlphabet.includes(nullChar)) {
-          nullChar = currAlphabet[currAlphabet.length - 1];
-        }
-        while (g < groupSize) {
-          let charIdx = currAlphabet.indexOf(nullChar); 
-          if (mode === "encrypt") {
-            charIdx += currAlphabet.indexOf(keyword.charAt(k));
-            if (charIdx > currAlphabet.length) {
-              charIdx -= currAlphabet.length;
-            }
-          } else if (mode === "decrypt") {
-            charIdx -= currAlphabet.indexOf(keyword.charAt(k));
-            if (charIdx < 0) {
-              charIdx += currAlphabet.length; 
-            }
-          }
-          tempText += currAlphabet[charIdx];
-          k++; 
-          if (k === keyword.length) {
-            k = 0; 
-          }
-          g++; 
-        }
-      }
-    }    
-    console.log(tempText);
-    onUpdateText(tempText);
   }
 
   function applyCipher(event: any) {
@@ -317,11 +124,28 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       defineCustomAlphabet(event.currentTarget.elements.alphabetInput.value);
     }
 
-    if (["shift", "atbash", "mono"].includes(cipher)) {
-      applyMonoCipher(event);
-    } else if (["vigenere"].includes(cipher)) {
-      applyPolyCipher(event);
+    if (cipher === "vigenere") {
+      let keyword = event.currentTarget.elements.keyword.value; 
+      if (!keyword) {
+        console.log("keyword is empty");
+        return; 
+      }
+      let outputText = applyVigenere(ALPHABETS.get(alphabet)!, originalText, keyword, mode, options);
+      onUpdateText(outputText);
+      return; 
+    } 
+
+    let map; 
+    if (cipher === "shift") {
+      map = mapCaesar(ALPHABETS.get(alphabet)!, parseInt(event.currentTarget.elements.shift.value), options.preserveCase, mode);
+    } else if (cipher === "atbash") {
+      map = mapAtbash(ALPHABETS.get(alphabet)!, options.preserveCase);
+    } else if (cipher === "mono") {
+      map = mapMonoSubstitution(ALPHABETS.get(alphabet)!, event.currentTarget.elements.keyword.value, options.preserveCase, mode);
     }
+    setMappings(map!);
+    let outputText = processMonoCipherText(ALPHABETS.get(alphabet)!, originalText, map!, options);
+    onUpdateText(outputText);
   }
 
   return (
