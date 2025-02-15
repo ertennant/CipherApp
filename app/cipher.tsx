@@ -87,13 +87,18 @@ function mapMonoSubstitution(alphabet: string[], keyword: string, preserveCase: 
     }
   }
   
+  let j = 0; 
   // deal with any part of the alphabet remaining (i.e., if keyword.length < alphabet.length)
   for (i = i; i < alphabet.length; i++) {
     let a = alphabet[i];
-    map.set(a, a);
-    if (preserveCase === true) {
-      map.set(a.toLowerCase(), a.toLowerCase());
+    while (keyword.includes(alphabet[j])) {
+      j++; 
     }
+    map.set(a, alphabet[j]);
+    if (preserveCase === true) {
+      map.set(a.toLowerCase(), alphabet[j].toLowerCase());
+    }
+    j++; 
   }
   return map; 
 }
@@ -194,9 +199,12 @@ function applyVigenere(alphabet: string[], inputText: string, keyword: string, m
       }
       g++; // increment current group size 
 
-    } else if (inChar === ' ' && options.removeWhitespace === false && options.useGroups === false) {
-      outputText += inChar;
-      g++; 
+    } else if (inChar === ' ') {
+      if (options.removeWhitespace === false && options.useGroups === false) {
+        outputText += inChar;
+        g++; 
+      } 
+      continue; // don't increment k 
     } else if (inChar !== ' ' && !alphabet.includes(inChar) && options.removeNonAlpha === false) {
       outputText += inChar; 
       g++; 
