@@ -17,7 +17,7 @@ This project is currently hosted through GitHub Pages. Open [https://ertennant.g
     1. Select the alphabet your plaintext uses. 
     2. Select the cipher you wish to apply. 
     3. Be sure to set any necessary parameters for your cipher: e.g., the Shift Cipher requires a shift value, the Vigenère Cipher requires a keyword, and so on. 
-4. Click `Apply Changes` to see the result generated with these settings. 
+4. Click `Apply Cipher` to see the result generated with these settings. 
 
 ### Cipher Settings Explained 
 

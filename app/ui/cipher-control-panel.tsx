@@ -157,7 +157,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       <div className={(isExpanded && activeSubPanel === "controls" ? "block overflow-scroll" : activeSubPanel === "controls" ? "hidden md:block md:overflow-scroll" : "hidden")}>
         <div className="m-1">
           <label htmlFor="ciphers">Select a cipher type: </label>
-          <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={cipher} onChange={e => setCipher(e.currentTarget.value)} disabled={!originalText}>
+          <select id="ciphers" name="ciphers" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={cipher} onChange={e => setCipher(e.currentTarget.value)}>
             <option value="shift">Caesar (Shift)</option>
             <option value="atbash">Atbash (Reverse Alphabet)</option>
             <option value="mono">Monoalphabetic Substitution</option>
@@ -166,7 +166,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
         </div>
         <div className="m-1">
           <label htmlFor="alphabet">Select an alphabet: </label>
-          <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={alphabet} disabled={!originalText} onChange={e => setAlphabet(e.currentTarget.value)}>
+          <select id="alphabet" name="alphabet" className="rounded-md p-1 bg-primary/60 hover:bg-primary/80" value={alphabet} onChange={e => setAlphabet(e.currentTarget.value)}>
             {(Array.from(ALPHABETS.keys()).map(e => 
               <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
             ))}
@@ -185,51 +185,52 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
           </div>
           <div className={"m-1" + (cipher !== "shift" ? " hidden" : "")}>
             <label htmlFor="shift" >Shift Value: </label>
-            <input type="number" id="shift" name="shift" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={alphabet.length} defaultValue={0} disabled={!originalText}></input> 
+            <input type="number" id="shift" name="shift" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={alphabet.length} defaultValue={0}></input> 
           </div>
           <div className={"m-1" + (!["mono", "vigenere"].includes(cipher) ? " hidden" : "")}>
             <label htmlFor="keyword">Keyword: </label>
-            <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} placeholder="keyword" defaultValue="" disabled={!originalText}></input>
+            <input type="text" id="keyword" name="keyword" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} placeholder="keyword" defaultValue=""></input>
           </div>
           <div className="m-1">
-            <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={!originalText || options.useGroups} checked={options.removeWhitespace} onChange={handleOptionsChange}></input>
+            <input type="checkbox" id="rmWhitespace" name="rmWhitespace" disabled={options.useGroups} checked={options.removeWhitespace} onChange={handleOptionsChange}></input>
             <label htmlFor="rmWhitespace" title="Remove all spaces, tabs, and other whitespace characters before processing."> Remove Whitespace</label>
           </div>
           <div className="m-1">
-            <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" disabled={!originalText} checked={options.removeNonAlpha} onChange={handleOptionsChange}></input>
+            <input type="checkbox" id="rmNonAlpha" name="rmNonAlpha" checked={options.removeNonAlpha} onChange={handleOptionsChange}></input>
             <label htmlFor="rmNonAlpha" title="Remove numbers, punctuation, and special characters before processing."> Remove Non-Letter Characters</label>
           </div>
           <div className="m-1">
-            <input type="checkbox" id="preserveCase" name="preserveCase" disabled={!originalText} checked={options.preserveCase} onChange={handleOptionsChange}></input>
+            <input type="checkbox" id="preserveCase" name="preserveCase" checked={options.preserveCase} onChange={handleOptionsChange}></input>
             <label htmlFor="preserveCase" title="Map uppercase letters to uppercase letters, and lowercase letters to lowercase letters."> Preserve Case</label>
           </div>        
           <div className="flex flex-row align-center gap-8">
             <div>
               <div className="m-1">
-                <input type="checkbox" id="useGroups" name="useGroups" disabled={!originalText} checked={options.useGroups} onChange={handleOptionsChange}></input>
+                <input type="checkbox" id="useGroups" name="useGroups" checked={options.useGroups} onChange={handleOptionsChange}></input>
                 <label htmlFor="useGroups" title="Remove whitespace, then break text into equal-sized blocks."> Use Groups</label>
               </div>
               <div className="m-1">
                 <label htmlFor="groupSize">Group Size: </label>
-                <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!originalText || !options.useGroups}></input> 
+                <input type="number" id="groupSize" name="groupSize" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80"} min={0} max={originalText.length} defaultValue={5} disabled={!options.useGroups}></input> 
               </div>
             </div>
             <div>            
               <div className="m-1">
-                <input type="checkbox" id="usePadding" name="usePadding" disabled={!originalText || !options.useGroups} checked={options.usePadding} onChange={handleOptionsChange}></input>
+                <input type="checkbox" id="usePadding" name="usePadding" disabled={!options.useGroups} checked={options.usePadding} onChange={handleOptionsChange}></input>
                 <label htmlFor="usePadding" title="Fill any extra space in the final block with a specific letter before processing."> Pad End</label>
               </div>
               <div className="m-1">
                 <label htmlFor="nullChar">Null Character: </label>
-                <input type="text" id="nullChar" name="nullChar" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80 w-8"} maxLength={1} defaultValue={alphabet !== "custom" ? ALPHABETS.get(alphabet)![ALPHABETS.get(alphabet)!.length - 1] : "X"} disabled={!originalText || !options.usePadding}></input> 
+                <input type="text" id="nullChar" name="nullChar" className={"rounded-md p-1 bg-primary/60 hover:bg-primary/80 w-8"} maxLength={1} defaultValue={alphabet !== "custom" ? ALPHABETS.get(alphabet)![ALPHABETS.get(alphabet)!.length - 1] : "X"} disabled={!options.usePadding}></input> 
               </div>
             </div>
           </div>
           <input 
             type="submit" 
-            value="Apply Changes" 
-            className={"bg-primary/80 rounded-md py-1 px-2 m-1 w-min self-center cursor-pointer transition duration-300 " + (originalText ? "hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800" : "")} 
+            value="Apply Cipher" 
+            className={"bg-primary/80 rounded-md py-1 px-2 m-1 w-min self-center cursor-pointer transition duration-300 " + (originalText ? "hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800" : "text-slate-500")} 
             disabled={!originalText}
+            title={!originalText ? "You must enter text before you can apply the cipher." : ""}
           ></input>
         </form> 
       </div>
@@ -246,7 +247,7 @@ export default function CipherControlPanel({originalText, currentText, onUpdateT
       }
       <button 
         type="button" 
-        className={"bg-primary/80 rounded-md py-1 px-2 m-1 w-min text-nowrap self-center cursor-pointer transition duration-300 " + (originalText ? "hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800 " : "") + (isExpanded ? "block" : "md:block hidden")} 
+        className={"bg-primary/80 rounded-md py-1 px-2 m-1 w-min text-nowrap self-center cursor-pointer transition duration-300 " + (originalText ? "hover:bg-primary dark:hover:bg-violet-700 active:bg-blue-400 active:shadow-inner active:shadow-blue-800 " : "text-slate-500 ") + (isExpanded ? "block" : "md:block hidden")} 
         disabled={!originalText}
         onClick={() => activeSubPanel === "controls" ? setActiveSubPanel("mappings") : setActiveSubPanel("controls")}
       >{activeSubPanel === "controls" ? "View Letter Mappings" : "View Cipher Settings"}</button>
